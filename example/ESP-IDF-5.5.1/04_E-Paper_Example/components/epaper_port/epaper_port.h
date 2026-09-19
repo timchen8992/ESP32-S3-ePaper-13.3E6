@@ -43,18 +43,21 @@ EPD 13inch3 E6
 
 
 /**********************************
-EPD 13inch3 E6  GPIO config
+XIAO ePaper Display Board EE02 GPIO
+SCLK D8/GPIO7  MOSI D10/GPIO9
+CS_M GPIO44    CS_S GPIO41     DC GPIO10
+RST  GPIO38    BUSY GPIO4      PWR_EN GPIO43
 **********************************/
-#define EPD_SCLK_PIN    9
-#define EPD_MOSI_PIN    46
+#define EPD_SCLK_PIN    7
+#define EPD_MOSI_PIN    9
 
-#define EPD_CS_M_PIN    10
-#define EPD_CS_S_PIN    3
+#define EPD_CS_M_PIN    44
+#define EPD_CS_S_PIN    41
 
-#define EPD_DC_PIN      11
+#define EPD_DC_PIN      10
 
-#define EPD_RST_PIN     2
-#define EPD_BUSY_PIN    12
+#define EPD_RST_PIN     38
+#define EPD_BUSY_PIN    4
 
 
 #define EPD_RST_1    gpio_set_level(EPD_RST_PIN,1)

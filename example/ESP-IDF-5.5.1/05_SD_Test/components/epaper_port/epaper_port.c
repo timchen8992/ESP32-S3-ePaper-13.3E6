@@ -166,24 +166,27 @@ static void spi_send_byte(const uint8_t cmd)
 /*Pinout of the 13.3-inch e-Paper module by Waveshare Electronics*/
 
 /*
-  Ink screen reset
+  T133A01 datasheet §5 Note 5-3: RES# is active low.
+  Hold reset, then release and wait for the controller to leave reset.
 */
 static void EPD_Reset(void)
 {
     EPD_RST_1;
-    vTaskDelay(pdMS_TO_TICKS(30));
+    vTaskDelay(pdMS_TO_TICKS(20));
     EPD_RST_0;
-    vTaskDelay(pdMS_TO_TICKS(30));
+    vTaskDelay(pdMS_TO_TICKS(20));
     EPD_RST_1;
-    vTaskDelay(pdMS_TO_TICKS(30));
+    vTaskDelay(pdMS_TO_TICKS(20));
     EPD_RST_0;
-    vTaskDelay(pdMS_TO_TICKS(30));
+    vTaskDelay(pdMS_TO_TICKS(20));
     EPD_RST_1;
-    vTaskDelay(pdMS_TO_TICKS(30));
+    vTaskDelay(pdMS_TO_TICKS(20));
 }
 
 /*
-  Waiting for the idle signal
+  T133A01 datasheet §5 pin 25 / Note 5-4:
+  BUSY_N = 0 while the driver is busy; BUSY_N = 1 means the host may send
+  command/data. Do not issue SPI while busy.
 */
 static void EPD_ReadBusyH(void)
 {
@@ -280,22 +283,32 @@ static void EPD_TurnOnDisplay(void)
     ESP_LOGI(TAG,"Display Done!!");
 }
 /*
-EPD init
+  T133A01 (13.3" E6) module init.
+
+  From 13_3_E6_eInk_Display_module_Datasheet (T133A01 A1):
+  - §7: VDD/AVDD must be stable >10 ms before SPI (PON itself is later, at refresh)
+  - §5: RES# active low; wait BUSY_N=1 before any command
+  - §5 / §6-3-1: 4-wire SPI, D/C# L=command H=data, CSB_M/CSB_S enable when low
+  Register bytes are not in that module datasheet; they program the dual
+  controller after reset. PON (0x04) is not sent here — see EPD_TurnOnDisplay.
 */
 void EPD_Init(void)
 {
-    // turn on
+    EPD_CS_ALL(1);
+
     EPD_PWR_ON;
     ESP_LOGI(TAG,"EPD_PWR_ON");
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(20));
 
     EPD_Reset();
     EPD_ReadBusyH();
 
+    /* Analog/timing config: master IC only (CSB_M) */
     EPD_CS_M_0;
 	EPD_SPI_Send(AN_TM, AN_TM_V, sizeof(AN_TM_V));
     EPD_CS_ALL(1);
 
+    /* Panel/image registers: both ICs (CSB_M + CSB_S) */
     EPD_CS_ALL(0);
 	EPD_SPI_Send(CMD66, CMD66_V, sizeof(CMD66_V));
     EPD_CS_ALL(1);
@@ -328,6 +341,7 @@ void EPD_Init(void)
 	EPD_SPI_Send(TRES, TRES_V, sizeof(TRES_V));
     EPD_CS_ALL(1);
 
+    /* Shared analog rails / boosters: master IC only */
     EPD_CS_M_0;
 	EPD_SPI_Send(PWR, PWR_V, sizeof(PWR_V));
     EPD_CS_ALL(1);
@@ -356,7 +370,7 @@ void EPD_Init(void)
 	EPD_SPI_Send(TFT_VCOM_POWER, TFT_VCOM_POWER_V, sizeof(TFT_VCOM_POWER_V));
     EPD_CS_ALL(1);
 
-    ESP_LOGI("TAG","OK");
+    ESP_LOGI(TAG,"OK");
 }
 
 

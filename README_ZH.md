@@ -23,7 +23,11 @@ ESP32-S3-ePaper-13.3E6 是一款面向 13.3 英寸、1600 × 1200 分辨率六�
 
 ## 快速开始
 
-预编译的出厂固件位于 [`Firmware/`](Firmware)，所需的 SD 卡资源位于 [`SD_files/`](SD_files)。有关开发环境搭建、固件烧录、引脚定义和配置方法，请参阅 [产品文档](https://www.waveshare.net/wiki/ESP32-S3-ePaper-13.3E6)。
+预编译的出厂固件位于 [`Firmware/`](Firmware)，所需的 SD 卡资源位于 [`SD_files/`](SD_files)。有关开发环境搭建、固件烧录、引脚定义和配置方法，请参阅 [产品文档](
+    
+    https://www.waveshare.net/wiki/ESP32-S3-ePaper-13.3E6
+    
+    )。
 
 ## 参与贡献
 

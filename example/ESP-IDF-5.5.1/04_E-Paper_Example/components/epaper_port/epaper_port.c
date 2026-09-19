@@ -6,7 +6,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 
-#define EPD_PWR         ((gpio_num_t)1)
+#define EPD_PWR         ((gpio_num_t)43)
 
 #define TAG "EPD"
 static spi_device_handle_t spi;
@@ -75,6 +75,7 @@ const uint8_t TFT_VCOM_POWER_V[1] = {
 
 static void EPD_GPIO_Init(void)
 {
+    ESP_LOGI(TAG,"EPD_GPIO_Init...");
   gpio_config_t gpio_conf = {};
   gpio_conf.intr_type = GPIO_INTR_DISABLE;
   gpio_conf.mode = GPIO_MODE_OUTPUT;
@@ -101,6 +102,7 @@ static void EPD_GPIO_Init(void)
 
 void EPD_Port_Init(void)
 {
+    ESP_LOGI(TAG,"EPD_Port_Init...");
   esp_err_t ret;
   spi_bus_config_t buscfg = 
   {
@@ -119,6 +121,12 @@ void EPD_Port_Init(void)
     .queue_size = 7,                     //We want to be able to queue 7 transactions at a time
   };
   ret = spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO);
+  if (ret == ESP_OK) {
+    ESP_LOGI(TAG, "spi_bus_initialize done (SCLK=%d MOSI=%d)", EPD_SCLK_PIN, EPD_MOSI_PIN);
+  } else {
+    ESP_LOGE(TAG, "spi_bus_initialize failed: %s", esp_err_to_name(ret));
+  }
+
   ESP_ERROR_CHECK(ret);
   ret = spi_bus_add_device(SPI3_HOST, &devcfg, &spi);
   ESP_ERROR_CHECK(ret);
@@ -170,6 +178,7 @@ static void spi_send_byte(const uint8_t cmd)
 */
 static void EPD_Reset(void)
 {
+    ESP_LOGI(TAG,"EPD_Reset...");
     EPD_RST_1;
     vTaskDelay(pdMS_TO_TICKS(30));
     EPD_RST_0;
@@ -180,6 +189,7 @@ static void EPD_Reset(void)
     vTaskDelay(pdMS_TO_TICKS(30));
     EPD_RST_1;
     vTaskDelay(pdMS_TO_TICKS(30));
+    ESP_LOGI(TAG,"EPD_Reset...done");
 }
 
 /*
@@ -187,11 +197,29 @@ static void EPD_Reset(void)
 */
 static void EPD_ReadBusyH(void)
 {
-    while(1)
-    {
-        if(ReadBusy){return;}
+    const TickType_t timeout = pdMS_TO_TICKS(5000);
+    TickType_t start = xTaskGetTickCount();
+
+ //   ESP_LOGI(TAG, "EPD_ReadBusyH: pin=%d start_level=%d (wait HIGH)", EPD_BUSY_PIN, gpio_get_level(EPD_BUSY_PIN));
+
+    while (gpio_get_level(EPD_BUSY_PIN) == 0) {
+        TickType_t elapsed = xTaskGetTickCount() - start;
+        if (elapsed >= timeout) {
+            ESP_LOGE(TAG, "EPD_ReadBusyH TIMEOUT after %lu ms, pin=%d still LOW",
+                     (unsigned long)(elapsed * portTICK_PERIOD_MS), EPD_BUSY_PIN);
+            return;
+        }
+        if ((elapsed * portTICK_PERIOD_MS) % 1000 < 10) {
+            ESP_LOGI(TAG, "EPD_ReadBusyH waiting %lu ms, level=%d",
+                     (unsigned long)(elapsed * portTICK_PERIOD_MS),
+                     gpio_get_level(EPD_BUSY_PIN));
+        }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+
+//    TickType_t elapsed = xTaskGetTickCount() - start;
+//    ESP_LOGI(TAG, "EPD_ReadBusyH idle HIGH after %lu ms, pin=%d",
+//             (unsigned long)(elapsed * portTICK_PERIOD_MS), EPD_BUSY_PIN);
 }
 /*
 Send byte command
@@ -254,8 +282,7 @@ static void EPD_SPI_Send(uint8_t Cmd, const uint8_t *buf, uint32_t Len)
 /*
   The data has been uploaded to Buff
 */
-static void EPD_TurnOnDisplay(void)
-{
+static void EPD_TurnOnDisplay(void){
     
     ESP_LOGI(TAG,"Write PON");
     EPD_CS_ALL(0);
@@ -291,7 +318,7 @@ void EPD_Init(void)
 
     EPD_Reset();
     EPD_ReadBusyH();
-
+    ESP_LOGI(TAG,"EPD_ReadBusyH...done");
     EPD_CS_M_0;
 	EPD_SPI_Send(AN_TM, AN_TM_V, sizeof(AN_TM_V));
     EPD_CS_ALL(1);
@@ -356,7 +383,7 @@ void EPD_Init(void)
 	EPD_SPI_Send(TFT_VCOM_POWER, TFT_VCOM_POWER_V, sizeof(TFT_VCOM_POWER_V));
     EPD_CS_ALL(1);
 
-    ESP_LOGI("TAG","OK");
+    ESP_LOGI(TAG,"OK");
 }
 
 
@@ -370,6 +397,7 @@ parameter:
 ******************************************************************************/
 void EPD_Clear(uint8_t color)
 {
+    ESP_LOGI(TAG,"EPD_Clear...succeed to apply for black memory...");
     uint8_t Color;
     Color = (color<<4)|color;
     size_t buffer_size =  EPD_WIDTH * EPD_HEIGHT / 4;
@@ -405,7 +433,7 @@ void EPD_Clear(uint8_t color)
         EPD_CS_ALL(1);
 
     } else {
-
+        ESP_LOGI(TAG,"succeed to apply for black memory...");
         for (uint32_t j = 0; j < buffer_size; j++) {
             Image_Temporary[j] = Color;
         }
