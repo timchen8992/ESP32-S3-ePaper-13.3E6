@@ -64,12 +64,26 @@
 
 static const char *TAG = "GUI_BMPfile";
 
+extern const uint8_t peacock_bmp_start[] asm("_binary_peacock_bmp_start");
+extern const uint8_t peacock_bmp_end[]   asm("_binary_peacock_bmp_end");
+
 typedef struct {
     FILE *f;
     const uint8_t *mem;
     size_t mem_size;
     size_t mem_pos;
 } bmp_src_t;
+
+static const char *bmp_basename(const char *path)
+{
+    const char *base = path;
+    for (const char *cursor = path; cursor && *cursor; cursor++) {
+        if ((*cursor == '/') || (*cursor == '\\')) {
+            base = cursor + 1;
+        }
+    }
+    return base;
+}
 
 static const uint8_t k_palette_rgb[6][3] = {
     {  0,   0,   0},
@@ -135,6 +149,10 @@ UBYTE GUI_ReadBmp_RGB_6Color(const char *path, UWORD Xstart, UWORD Ystart)
     src.f = fopen(path, "rb");
     if (src.f != NULL) {
         ESP_LOGI(TAG, "open the file done!");
+    } else if (strcmp(bmp_basename(path), "peacock.bmp") == 0) {
+        src.mem = peacock_bmp_start;
+        src.mem_size = (size_t)(peacock_bmp_end - peacock_bmp_start);
+        ESP_LOGI(TAG, "open embedded peacock.bmp, %u bytes", (unsigned)src.mem_size);
     } else {
         ESP_LOGE(TAG, "Cann't open the file!");
         return 0;

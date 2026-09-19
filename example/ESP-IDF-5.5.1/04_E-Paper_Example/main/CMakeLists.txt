@@ -9,20 +9,4 @@ idf_component_register(
         epaper_port
     PRIV_REQUIRES
         esp_rom
-    EMBED_FILES
-        "thingboot_pages/page_01.jpg"
-        "thingboot_pages/page_02.jpg"
-        "thingboot_pages/page_03.jpg"
-        "thingboot_pages/page_04.jpg"
-        "thingboot_pages/page_05.jpg"
-        "thingboot_pages/page_06.jpg"
-        "thingboot_pages/page_07.jpg"
-        "thingboot_pages/page_08.jpg"
-        "thingboot_pages/page_09.jpg"
-        "thingboot_pages/page_10.jpg"
-        "thingboot_pages/page_11.jpg"
-        "thingboot_pages/page_12.jpg"
-        "thingboot_pages/page_13.jpg"
-        "thingboot_pages/page_14.jpg"
-        "thingboot_pages/page_15.jpg"
 )

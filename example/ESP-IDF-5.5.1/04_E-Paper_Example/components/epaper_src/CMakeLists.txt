@@ -55,5 +55,5 @@ idf_component_register(
         # Auxiliary font
         "Fonts/ASCII/font80EN.FON"
         "Fonts/ASCII/font182EN.FON"
-        "../../dad_mom.bmp"
+        "../../peacock.bmp"
 )

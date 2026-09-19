@@ -3,61 +3,14 @@
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
 #include "GUI_Paint.h"
+#include "GUI_BMPfile.h"
 #include "epaper_port.h"
 #include "esp_log.h"
-#include "jpeg_paint.h"
 
 uint8_t *Image_Mono = NULL;
 static const char *TAG = "main";
 
 size_t buffer_size = EPD_WIDTH * EPD_HEIGHT / 2;
-
-#define DECLARE_PDF_PAGE(number) \
-    extern const uint8_t pdf_page_##number##_start[] \
-        asm("_binary_page_" #number "_jpg_start"); \
-    extern const uint8_t pdf_page_##number##_end[] \
-        asm("_binary_page_" #number "_jpg_end")
-
-DECLARE_PDF_PAGE(01);
-DECLARE_PDF_PAGE(02);
-DECLARE_PDF_PAGE(03);
-DECLARE_PDF_PAGE(04);
-DECLARE_PDF_PAGE(05);
-DECLARE_PDF_PAGE(06);
-DECLARE_PDF_PAGE(07);
-DECLARE_PDF_PAGE(08);
-DECLARE_PDF_PAGE(09);
-DECLARE_PDF_PAGE(10);
-DECLARE_PDF_PAGE(11);
-DECLARE_PDF_PAGE(12);
-DECLARE_PDF_PAGE(13);
-DECLARE_PDF_PAGE(14);
-DECLARE_PDF_PAGE(15);
-
-#undef DECLARE_PDF_PAGE
-
-typedef struct {
-    const uint8_t *start;
-    const uint8_t *end;
-} embedded_page_t;
-
-static const embedded_page_t s_thingboot_pages[] = {
-    {pdf_page_01_start, pdf_page_01_end},
-    {pdf_page_02_start, pdf_page_02_end},
-    {pdf_page_03_start, pdf_page_03_end},
-    {pdf_page_04_start, pdf_page_04_end},
-    {pdf_page_05_start, pdf_page_05_end},
-    {pdf_page_06_start, pdf_page_06_end},
-    {pdf_page_07_start, pdf_page_07_end},
-    {pdf_page_08_start, pdf_page_08_end},
-    {pdf_page_09_start, pdf_page_09_end},
-    {pdf_page_10_start, pdf_page_10_end},
-    {pdf_page_11_start, pdf_page_11_end},
-    {pdf_page_12_start, pdf_page_12_end},
-    {pdf_page_13_start, pdf_page_13_end},
-    {pdf_page_14_start, pdf_page_14_end},
-    {pdf_page_15_start, pdf_page_15_end},
-};
 
 void app_main(void)
 {
@@ -120,23 +73,13 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(3000));
 #endif
 
-#if 1
     while (1) {
-        for (size_t page = 0;
-             page < sizeof(s_thingboot_pages) / sizeof(s_thingboot_pages[0]);
-             page++) {
-            Paint_Clear(EPD_WHITE);
-            ESP_LOGI(TAG, "Paint ThingBoot page %u of 15", (unsigned)(page + 1));
-
-            const embedded_page_t *image = &s_thingboot_pages[page];
-            if (Paint_DrawJpeg6Color(image->start,
-                                    (size_t)(image->end - image->start))) {
-                EPD_Display(Image_Mono);
-                vTaskDelay(pdMS_TO_TICKS(10000));
-            }
-        }
+        Paint_Clear(EPD_WHITE);
+        ESP_LOGI(TAG, "Paint peacock.bmp");
+        GUI_ReadBmp_RGB_6Color("peacock.bmp", 0, 0);
+        EPD_Display(Image_Mono);
+        vTaskDelay(pdMS_TO_TICKS(30000));
     }
-#endif
 
     ESP_LOGI(TAG, "clear display; EPD sleep is disabled");
 
